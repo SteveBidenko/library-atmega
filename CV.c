@@ -1,31 +1,32 @@
 #include <mega16.h>
 #include <stdlib.h>  // for abs
 #include <stdio.h>
+// Comment
 #include <delay.h>
 #include "lcd_4bit.h"
 #include "menu.h"
 #include "robowater.h"
-// DS1820 функции температурного преобразования (Биденко+Панарин)
+// DS1820 ГґГіГ­ГЄГ¶ГЁГЁ ГІГҐГ¬ГЇГҐГ°Г ГІГіГ°Г­Г®ГЈГ® ГЇГ°ГҐГ®ГЎГ°Г Г§Г®ГўГ Г­ГЁГї (ГЃГЁГ¤ГҐГ­ГЄГ®+ГЏГ Г­Г Г°ГЁГ­)
 #include "spd1820.h"
 #include "valcoder.h"
 #include "at2404.h"
-// Локальные макроподстановки
+// Г‹Г®ГЄГ Г«ГјГ­Г»ГҐ Г¬Г ГЄГ°Г®ГЇГ®Г¤Г±ГІГ Г­Г®ГўГЄГЁ
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 30
 // enum
-// Определение главных структур
-// Описание глобальны переменных
-// int tw_prs;             // Заданная температура воды
-// TW_in_Min -Температура Воды на входе( Подаче ) мин.
-// TW_out_Min -Температура Воды на выходе ( Обратка ) мин.
-// TW_out_Stop -Температура Воды на входе для поддержания в режиме стоп.
-// TA_in_Min -Температура Воздуха на входе мин -30 С.
-// TA_out_Min -Температура Воздуха на выходе мин +15 С.
-// TA_out_prs -Температура Воздуха на выходе установленная +20 С.(Заданная)
+// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГЈГ«Г ГўГ­Г»Гµ Г±ГІГ°ГіГЄГІГіГ°
+// ГЋГЇГЁГ±Г Г­ГЁГҐ ГЈГ«Г®ГЎГ Г«ГјГ­Г» ГЇГҐГ°ГҐГ¬ГҐГ­Г­Г»Гµ
+// int tw_prs;             // Г‡Г Г¤Г Г­Г­Г Гї ГІГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  ГўГ®Г¤Г»
+// TW_in_Min -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г¤Г» Г­Г  ГўГµГ®Г¤ГҐ( ГЏГ®Г¤Г Г·ГҐ ) Г¬ГЁГ­.
+// TW_out_Min -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г¤Г» Г­Г  ГўГ»ГµГ®Г¤ГҐ ( ГЋГЎГ°Г ГІГЄГ  ) Г¬ГЁГ­.
+// TW_out_Stop -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г¤Г» Г­Г  ГўГµГ®Г¤ГҐ Г¤Г«Гї ГЇГ®Г¤Г¤ГҐГ°Г¦Г Г­ГЁГї Гў Г°ГҐГ¦ГЁГ¬ГҐ Г±ГІГ®ГЇ.
+// TA_in_Min -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г§Г¤ГіГµГ  Г­Г  ГўГµГ®Г¤ГҐ Г¬ГЁГ­ -30 Г‘.
+// TA_out_Min -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г§Г¤ГіГµГ  Г­Г  ГўГ»ГµГ®Г¤ГҐ Г¬ГЁГ­ +15 Г‘.
+// TA_out_prs -Г’ГҐГ¬ГЇГҐГ°Г ГІГіГ°Г  Г‚Г®Г§Г¤ГіГµГ  Г­Г  ГўГ»ГµГ®Г¤ГҐ ГіГ±ГІГ Г­Г®ГўГ«ГҐГ­Г­Г Гї +20 Г‘.(Г‡Г Г¤Г Г­Г­Г Гї)
 
 
 struct st_datetime s_dt;
-struct st_mode mode = {0, 0, 0, 1};           // Текущий режим работы
+struct st_mode mode = {0, 0, 0, 1};           // Г’ГҐГЄГіГ№ГЁГ© Г°ГҐГ¦ГЁГ¬ Г°Г ГЎГ®ГІГ»
 struct st_prim_par {
     byte PWM_out1, PWM_out2, ADC1, ADC2;
     int Tw1, Tw2, Ta1, Ta2, TW_in_Min, TW_out_Min, TW_out_Stop, TA_in_Min, TA_out_Min,TA_out_prs; 
@@ -33,73 +34,73 @@ struct st_prim_par {
     55, 15, 30, 30,
     99, 1, 2, 3, 75, 15, 30, 27, 15, 20
 };
-enum en_event event;                          // Текущее событие в системе
-// Описание функций
+enum en_event event;                          // Г’ГҐГЄГіГ№ГҐГҐ Г±Г®ГЎГ»ГІГЁГҐ Гў Г±ГЁГ±ГІГҐГ¬ГҐ
+// ГЋГЇГЁГ±Г Г­ГЁГҐ ГґГіГ­ГЄГ¶ГЁГ©
 void printallterms(void); void lcd_primary_screen(void); void check_serial(void);
-// Основная программа
+// ГЋГ±Г­Г®ГўГ­Г Гї ГЇГ°Г®ГЈГ°Г Г¬Г¬Г 
 void main(void) {
     // register byte i;
     // struct st_prim_par *ppr_par;
     byte size_prim_par;
-    init();                  // Инициализация всей периферии
+    init();                  // Г€Г­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГї ГўГ±ГҐГ© ГЇГҐГ°ГЁГґГҐГ°ГЁГЁ
     #asm("sei")             // Global enable interrupts
-    printf("Старт программы RoboWater. %u.%02u. Найдено %u термометров.\r\n", MAJOR_VERSION, MINOR_VERSION, ds1820_devices);
-    // Если есть термометры, то выводим их значение
+    printf("Г‘ГІГ Г°ГІ ГЇГ°Г®ГЈГ°Г Г¬Г¬Г» RoboWater. %u.%02u. ГЌГ Г©Г¤ГҐГ­Г® %u ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г®Гў.\r\n", MAJOR_VERSION, MINOR_VERSION, ds1820_devices);
+    // Г…Г±Г«ГЁ ГҐГ±ГІГј ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г», ГІГ® ГўГ»ГўГ®Г¤ГЁГ¬ ГЁГµ Г§Г­Г Г·ГҐГ­ГЁГҐ
     printallterms();
-    // print_all_menu();       // Выведем на отладочную консоль все пункты меню
-    // Сохраняем в EEPROM структуру prim_par
+    // print_all_menu();       // Г‚Г»ГўГҐГ¤ГҐГ¬ Г­Г  Г®ГІГ«Г Г¤Г®Г·Г­ГіГѕ ГЄГ®Г­Г±Г®Г«Гј ГўГ±ГҐ ГЇГіГ­ГЄГІГ» Г¬ГҐГ­Гѕ
+    // Г‘Г®ГµГ°Г Г­ГїГҐГ¬ Гў EEPROM Г±ГІГ°ГіГЄГІГіГ°Гі prim_par
     // ppr_par = &prim_par; 
     size_prim_par = sizeof(prim_par);  
     eeprom_write_struct ((char *)&prim_par, size_prim_par);
-    // printf("До записи в EEPROM (%u bytes) значение Tw2=%u ... ", size_prim_par, prim_par.Tw2); 
+    // printf("Г„Г® Г§Г ГЇГЁГ±ГЁ Гў EEPROM (%u bytes) Г§Г­Г Г·ГҐГ­ГЁГҐ Tw2=%u ... ", size_prim_par, prim_par.Tw2); 
     // prim_par.Tw2 = 99;
     // eeprom_write(0, size_prim_par);
     // size_prim_par = eeprom_read(0);
-    // printf("Изменяем значение значение Tw2=%u ...", prim_par.Tw2); 
-    // Восстанавливаем из EEPROM структуру prim_par
+    // printf("Г€Г§Г¬ГҐГ­ГїГҐГ¬ Г§Г­Г Г·ГҐГ­ГЁГҐ Г§Г­Г Г·ГҐГ­ГЁГҐ Tw2=%u ...", prim_par.Tw2); 
+    // Г‚Г®Г±Г±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ ГЁГ§ EEPROM Г±ГІГ°ГіГЄГІГіГ°Гі prim_par
     eeprom_read_struct ((char *)&prim_par, size_prim_par);
-    printf("После чтение из EEPROM значение Tw2=%u\r\n", prim_par.Tw2); 
-    // printf("Было %u, стало после чтение из EEPROM size=%u\r\n", sizeof(prim_par), size_prim_par); 
+    printf("ГЏГ®Г±Г«ГҐ Г·ГІГҐГ­ГЁГҐ ГЁГ§ EEPROM Г§Г­Г Г·ГҐГ­ГЁГҐ Tw2=%u\r\n", prim_par.Tw2); 
+    // printf("ГЃГ»Г«Г® %u, Г±ГІГ Г«Г® ГЇГ®Г±Г«ГҐ Г·ГІГҐГ­ГЁГҐ ГЁГ§ EEPROM size=%u\r\n", sizeof(prim_par), size_prim_par); 
     /*
-    // Необходима до старта основного цикла реализовать ручную коррекцию даты и времени с автоматическим выходом по таймеру
-    timer1_valcoder = 60;       // Установка таймера 30 сек
+    // ГЌГҐГ®ГЎГµГ®Г¤ГЁГ¬Г  Г¤Г® Г±ГІГ Г°ГІГ  Г®Г±Г­Г®ГўГ­Г®ГЈГ® Г¶ГЁГЄГ«Г  Г°ГҐГ Г«ГЁГ§Г®ГўГ ГІГј Г°ГіГ·Г­ГіГѕ ГЄГ®Г°Г°ГҐГЄГ¶ГЁГѕ Г¤Г ГІГ» ГЁ ГўГ°ГҐГ¬ГҐГ­ГЁ Г± Г ГўГІГ®Г¬Г ГІГЁГ·ГҐГ±ГЄГЁГ¬ ГўГ»ГµГ®Г¤Г®Г¬ ГЇГ® ГІГ Г©Г¬ГҐГ°Гі
+    timer1_valcoder = 60;       // Г“Г±ГІГ Г­Г®ГўГЄГ  ГІГ Г©Г¬ГҐГ°Г  30 Г±ГҐГЄ
     while(timer1_valcoder) {
-         lcd_command(LCD_DISP_ON);       // Убираем курсор с LCD
-         lcd_gotoxy(0,0);        // Устанавливаем курсор в позицию 0 первой строки
-         sprintf(linestr, "Уст.времени");
+         lcd_command(LCD_DISP_ON);       // Г“ГЎГЁГ°Г ГҐГ¬ ГЄГіГ°Г±Г®Г° Г± LCD
+         lcd_gotoxy(0,0);        // Г“Г±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ ГЄГіГ°Г±Г®Г° Гў ГЇГ®Г§ГЁГ¶ГЁГѕ 0 ГЇГҐГ°ГўГ®Г© Г±ГІГ°Г®ГЄГЁ
+         sprintf(linestr, "Г“Г±ГІ.ГўГ°ГҐГ¬ГҐГ­ГЁ");
     }
     */
-    lcd_primary_screen();       // выводим стартовую картинку на экранчик
+    lcd_primary_screen();       // ГўГ»ГўГ®Г¤ГЁГ¬ Г±ГІГ Г°ГІГ®ГўГіГѕ ГЄГ Г°ГІГЁГ­ГЄГі Г­Г  ГЅГЄГ°Г Г­Г·ГЁГЄ
     // if (PINC.6) PORTD |= (1<<4); else PORTD &= ~(1<<4);
     // if (PINC.7) PORTD &= ~(1<<5); else PORTD |= (1<<5);
     // if (PINC.5) PORTD &= ~(1<<5); else PORTD |= (1<<5);
     while(1) {
         check_serial();
-        // проверяем и присваиваем биту PORTD.4 состояния PIND.6
+        // ГЇГ°Г®ГўГҐГ°ГїГҐГ¬ ГЁ ГЇГ°ГЁГ±ГўГ ГЁГўГ ГҐГ¬ ГЎГЁГІГі PORTD.4 Г±Г®Г±ГІГ®ГїГ­ГЁГї PIND.6
         // if(PIND.6) PORTD &= ~(1<<4); else PORTD |= (1<<4);
         if (event == ev_none) {
             if (!VALCODER_ENTER) {
-                // Подавление дребезга Enter
+                // ГЏГ®Г¤Г ГўГ«ГҐГ­ГЁГҐ Г¤Г°ГҐГЎГҐГ§ГЈГ  Enter
                 delay_ms(100);
-                if (!VALCODER_ENTER) {  // printf ("Сгенерировали нажатие Enter\r\n");
+                if (!VALCODER_ENTER) {  // printf ("Г‘ГЈГҐГ­ГҐГ°ГЁГ°Г®ГўГ Г«ГЁ Г­Г Г¦Г ГІГЁГҐ Enter\r\n");
                     event = ev_enter;
-                    // Запускаем таймер инактивности
+                    // Г‡Г ГЇГіГ±ГЄГ ГҐГ¬ ГІГ Г©Г¬ГҐГ° ГЁГ­Г ГЄГІГЁГўГ­Г®Г±ГІГЁ
                     timer1_valcoder = TIMER_INACTIVE;                }
             }
             if (!VALCODER_CANCEL) {
-                // Подавление дребезга Cancel
+                // ГЏГ®Г¤Г ГўГ«ГҐГ­ГЁГҐ Г¤Г°ГҐГЎГҐГ§ГЈГ  Cancel
                 delay_ms(50);
-                if (!VALCODER_CANCEL) { // printf ("Сгенерировали нажатие Cancel\r\n");
+                if (!VALCODER_CANCEL) { // printf ("Г‘ГЈГҐГ­ГҐГ°ГЁГ°Г®ГўГ Г«ГЁ Г­Г Г¦Г ГІГЁГҐ Cancel\r\n");
                     event = ev_cancel;
-                    // Запускаем таймер инактивности
+                    // Г‡Г ГЇГіГ±ГЄГ ГҐГ¬ ГІГ Г©Г¬ГҐГ° ГЁГ­Г ГЄГІГЁГўГ­Г®Г±ГІГЁ
                     timer1_valcoder = TIMER_INACTIVE;                }
             }
-            // Обрабатываем событие valcoder'а
-            if ((abs(valcoder)-VALCODER_SENSITY) >= 0) {        // Если сработал valcoder
-                // printf ("Сгенерировали кручение (%i)...\r\n", valcoder);
+            // ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ Г±Г®ГЎГ»ГІГЁГҐ valcoder'Г 
+            if ((abs(valcoder)-VALCODER_SENSITY) >= 0) {        // Г…Г±Г«ГЁ Г±Г°Г ГЎГ®ГІГ Г« valcoder
+                // printf ("Г‘ГЈГҐГ­ГҐГ°ГЁГ°Г®ГўГ Г«ГЁ ГЄГ°ГіГ·ГҐГ­ГЁГҐ (%i)...\r\n", valcoder);
                 if (valcoder < 0) event = ev_left;
                 else event = ev_right;
-                // Запускаем таймер инактивности
+                // Г‡Г ГЇГіГ±ГЄГ ГҐГ¬ ГІГ Г©Г¬ГҐГ° ГЁГ­Г ГЄГІГЁГўГ­Г®Г±ГІГЁ
                 timer1_valcoder = TIMER_INACTIVE;
                 valcoder = VALCODER_NO_ROTATE;
                 // if (valcoder > VALCODER_NO_ROTATE) printf (" -->\r\n"); else printf ("<-- \r\n");
@@ -107,42 +108,42 @@ void main(void) {
             }
         }
         switch (event) {
-            case ev_secunda:                // Обрабатываем ежесекундное событие.
-                main_menu[0].val_data = read_term(0);       // Выводим информацию о главном термометре
+            case ev_secunda:                // ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГҐГ¦ГҐГ±ГҐГЄГіГ­Г¤Г­Г®ГҐ Г±Г®ГЎГ»ГІГЁГҐ.
+                main_menu[0].val_data = read_term(0);       // Г‚Г»ГўГ®Г¤ГЁГ¬ ГЁГ­ГґГ®Г°Г¬Г Г¶ГЁГѕ Г® ГЈГ«Г ГўГ­Г®Г¬ ГІГҐГ°Г¬Г®Г¬ГҐГІГ°ГҐ
                 switch (mode.menu) {
                     case 0: lcd_primary_screen(); break;
                     case 1: lcd_menu(0); break;
                     default: ;
                     // case 2: lcd_edit(0); break;
                 };
-                event = ev_none;            // Очищаем событие
+                event = ev_none;            // ГЋГ·ГЁГ№Г ГҐГ¬ Г±Г®ГЎГ»ГІГЁГҐ
                 break;
-            case ev_left:                   // printf ("Обрабатываем прокрутку valcoder влево\r\n");
-            case ev_right:                  // printf ("Обрабатываем прокрутку valcoder вправо\r\n");
-                // printf ("Обрабатываем прокрутку valcoder (%d), в режиме %d - ", event-2, mode.menu);
+            case ev_left:                   // printf ("ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГЇГ°Г®ГЄГ°ГіГІГЄГі valcoder ГўГ«ГҐГўГ®\r\n");
+            case ev_right:                  // printf ("ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГЇГ°Г®ГЄГ°ГіГІГЄГі valcoder ГўГЇГ°Г ГўГ®\r\n");
+                // printf ("ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГЇГ°Г®ГЄГ°ГіГІГЄГі valcoder (%d), Гў Г°ГҐГ¦ГЁГ¬ГҐ %d - ", event-2, mode.menu);
                 switch (mode.menu) {
-                    case 0: lcd_menu(mode.menu++); break;   // Выводим меню без изменения позиции printf ("entering...");
+                    case 0: lcd_menu(mode.menu++); break;   // Г‚Г»ГўГ®Г¤ГЁГ¬ Г¬ГҐГ­Гѕ ГЎГҐГ§ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГї ГЇГ®Г§ГЁГ¶ГЁГЁ printf ("entering...");
                     case 1: lcd_menu(event-2); break;       // printf ("navigating...");
                     case 2: lcd_edit(event-2); break;       // printf ("editing...");
                     default: ;                              // printf ("defaulting...");
                 }
                 // printf ("\r\n");
-                event = ev_none;            // Очищаем событие
+                event = ev_none;            // ГЋГ·ГЁГ№Г ГҐГ¬ Г±Г®ГЎГ»ГІГЁГҐ
                 break;
-            case ev_enter:                  // Если нажат Enter
+            case ev_enter:                  // Г…Г±Г«ГЁ Г­Г Г¦Г ГІ Enter
                 // LAMP_ECHO_PORT |= (1<<LAMP_ECHO_PIN); timer1_lamp = ENTER_CANCEL_OVERFLOW; if (mode.menu <= 2)
                 switch (mode.menu) {
                     // lcd_primary_screen();
-                    // Обрабатываем нажатие enter c учетом того, что значение mode.menu еще старое
-                    case 0: lcd_menu(0); ++mode.menu; break;    // Если находились в главном экране, запускаем прорисовку меню
-                    case 1:                                     // Если находились в меню, то анализируем
+                    // ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ Г­Г Г¦Г ГІГЁГҐ enter c ГіГ·ГҐГІГ®Г¬ ГІГ®ГЈГ®, Г·ГІГ® Г§Г­Г Г·ГҐГ­ГЁГҐ mode.menu ГҐГ№ГҐ Г±ГІГ Г°Г®ГҐ
+                    case 0: lcd_menu(0); ++mode.menu; break;    // Г…Г±Г«ГЁ Г­Г ГµГ®Г¤ГЁГ«ГЁГ±Гј Гў ГЈГ«Г ГўГ­Г®Г¬ ГЅГЄГ°Г Г­ГҐ, Г§Г ГЇГіГ±ГЄГ ГҐГ¬ ГЇГ°Г®Г°ГЁГ±Г®ГўГЄГі Г¬ГҐГ­Гѕ
+                    case 1:                                     // Г…Г±Г«ГЁ Г­Г ГµГ®Г¤ГЁГ«ГЁГ±Гј Гў Г¬ГҐГ­Гѕ, ГІГ® Г Г­Г Г«ГЁГ§ГЁГ°ГіГҐГ¬
                             lcd_initedit(0); break;
                     case 2: lcd_initedit(1); mode.menu = 1; break;
                 };
-                event = ev_none;            // Очищаем событие
+                event = ev_none;            // ГЋГ·ГЁГ№Г ГҐГ¬ Г±Г®ГЎГ»ГІГЁГҐ
                 break;
             case ev_timer:
-                // Запускаем таймер инактивности
+                // Г‡Г ГЇГіГ±ГЄГ ГҐГ¬ ГІГ Г©Г¬ГҐГ° ГЁГ­Г ГЄГІГЁГўГ­Г®Г±ГІГЁ
                 if (mode.menu) timer1_valcoder = TIMER_INACTIVE;
             case ev_cancel:
                 lcd_clrscr();
@@ -153,99 +154,99 @@ void main(void) {
                     case 2: --mode.menu; lcd_initedit(-1); break;
                     case 3: mode.menu = 1; break;
                 };
-                event = ev_none;            // Очищаем событие
+                event = ev_none;            // ГЋГ·ГЁГ№Г ГҐГ¬ Г±Г®ГЎГ»ГІГЁГҐ
                 break;
             default:
                 break;
         };
     }; // while (1)
 }
-// Печать всех термометров
+// ГЏГҐГ·Г ГІГј ГўГ±ГҐГµ ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г®Гў
 void printallterms(void) {
     int term;
     register byte i;
 
-    if(!ds1820_devices) return;			// если термометры не обнаружены - просто выходим из функции
-    printf("\t");						// печатаем знак табуляции в терминале
+    if(!ds1820_devices) return;			// ГҐГ±Г«ГЁ ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г» Г­ГҐ Г®ГЎГ­Г Г°ГіГ¦ГҐГ­Г» - ГЇГ°Г®Г±ГІГ® ГўГ»ГµГ®Г¤ГЁГ¬ ГЁГ§ ГґГіГ­ГЄГ¶ГЁГЁ
+    printf("\t");						// ГЇГҐГ·Г ГІГ ГҐГ¬ Г§Г­Г ГЄ ГІГ ГЎГіГ«ГїГ¶ГЁГЁ Гў ГІГҐГ°Г¬ГЁГ­Г Г«ГҐ
     for(i=0; i<ds1820_devices; i++) {
     	term = read_term(i);
         printf(" t%-u = %-i.%-uC; ", i+1, term/100, abs(term%100));
     }
     printf("\r\n");
 }
-// Чтение температуры (аргумент - номер термометра начиная с 0)
+// Г—ГІГҐГ­ГЁГҐ ГІГҐГ¬ГЇГҐГ°Г ГІГіГ°Г» (Г Г°ГЈГіГ¬ГҐГ­ГІ - Г­Г®Г¬ГҐГ° ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г  Г­Г Г·ГЁГ­Г Гї Г± 0)
 int read_term(byte num) {
     float lt;
     lt = termometers[num].scale / 127;
     lt = termometers[num].t * (lt + 1) + termometers[num].offset;
     return (int)lt;
 };
-// Полностью прорисовать главный экран
+// ГЏГ®Г«Г­Г®Г±ГІГјГѕ ГЇГ°Г®Г°ГЁГ±Г®ГўГ ГІГј ГЈГ«Г ГўГ­Г»Г© ГЅГЄГ°Г Г­
 void lcd_primary_screen(void) {
-    lcd_command(LCD_DISP_ON);       // Убираем курсор с LCD
-    lcd_gotoxy(0,0);        // Устанавливаем курсор в позицию 0 первой строки
+    lcd_command(LCD_DISP_ON);       // Г“ГЎГЁГ°Г ГҐГ¬ ГЄГіГ°Г±Г®Г° Г± LCD
+    lcd_gotoxy(0,0);        // Г“Г±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ ГЄГіГ°Г±Г®Г° Гў ГЇГ®Г§ГЁГ¶ГЁГѕ 0 ГЇГҐГ°ГўГ®Г© Г±ГІГ°Г®ГЄГЁ
     sprintf(linestr, "%02u:%02u:%02u %02u.%02u", s_dt.cHH, s_dt.cMM, s_dt.cSS, s_dt.cdd, s_dt.cmo);
     lcd_puts(linestr);
-    lcd_gotoxy(0,1);                // Устанавливаем курсор в позицию 0 строки 2
-    // Выводим информацию о термометрах
+    lcd_gotoxy(0,1);                // Г“Г±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ ГЄГіГ°Г±Г®Г° Гў ГЇГ®Г§ГЁГ¶ГЁГѕ 0 Г±ГІГ°Г®ГЄГЁ 2
+    // Г‚Г»ГўГ®Г¤ГЁГ¬ ГЁГ­ГґГ®Г°Г¬Г Г¶ГЁГѕ Г® ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г Гµ
     if(ds1820_devices)
         sprintf(linestr, "t=%-i.%-uC ", main_menu[0].val_data/100, abs(main_menu[0].val_data%100));
     else
         sprintf(linestr, "No termometers");
     lcd_puts(linestr);
 }
-// Обработка событий от серийного порта
+// ГЋГЎГ°Г ГЎГ®ГІГЄГ  Г±Г®ГЎГ»ГІГЁГ© Г®ГІ Г±ГҐГ°ГЁГ©Г­Г®ГЈГ® ГЇГ®Г°ГІГ 
 void check_serial(void) {
-    byte inbyte;    // Описание локальных переменных
+    byte inbyte;    // ГЋГЇГЁГ±Г Г­ГЁГҐ Г«Г®ГЄГ Г«ГјГ­Г»Гµ ГЇГҐГ°ГҐГ¬ГҐГ­Г­Г»Гµ
     register byte i;
-    // Обрабатываем последовательный порт
-    if (UCSRA & RX_COMPLETE) { // Пришло ли что-нибудь
+    // ГЋГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГЇГ®Г±Г«ГҐГ¤Г®ГўГ ГІГҐГ«ГјГ­Г»Г© ГЇГ®Г°ГІ
+    if (UCSRA & RX_COMPLETE) { // ГЏГ°ГЁГёГ«Г® Г«ГЁ Г·ГІГ®-Г­ГЁГЎГіГ¤Гј
         inbyte = UDR;
         switch (inbyte) {
-            case 0x7A:                // символ 'z'
-                printf("Время: %02u:%02u:%02u, дата:%02u.%02u.%02u, найдено %u термометров\r\n",
+            case 0x7A:                // Г±ГЁГ¬ГўГ®Г« 'z'
+                printf("Г‚Г°ГҐГ¬Гї: %02u:%02u:%02u, Г¤Г ГІГ :%02u.%02u.%02u, Г­Г Г©Г¤ГҐГ­Г® %u ГІГҐГ°Г¬Г®Г¬ГҐГІГ°Г®Гў\r\n",
                         s_dt.cHH, s_dt.cMM, s_dt.cSS, s_dt.cdd, s_dt.cmo, s_dt.cyy, ds1820_devices);
                 printallterms();
                 break;
-            case 0x71:                // символ 'q'
+            case 0x71:                // Г±ГЁГ¬ГўГ®Г« 'q'
                 print_curr_menu2(1); break;
-            case 0x61:                // символ 'a'
+            case 0x61:                // Г±ГЁГ¬ГўГ®Г« 'a'
                 print_curr_menu2(-1); break;
-            /* case 0x77:                // символ 'w'
-                // Входим в меню (эмуляция кнопки Enter)
+            /* case 0x77:                // Г±ГЁГ¬ГўГ®Г« 'w'
+                // Г‚ГµГ®Г¤ГЁГ¬ Гў Г¬ГҐГ­Гѕ (ГЅГ¬ГіГ«ГїГ¶ГЁГї ГЄГ­Г®ГЇГЄГЁ Enter)
                 // parameters[12].val_data++; if (parameters[12].val_data > 3) parameters[12].val_data = 0;
-                // if (++main_menu[1].val_data > 3) main_menu[1].val_data = 0; // [12] Основной режим
+                // if (++main_menu[1].val_data > 3) main_menu[1].val_data = 0; // [12] ГЋГ±Г­Г®ГўГ­Г®Г© Г°ГҐГ¦ГЁГ¬
                 // init_curr_menu(&parameters[0], NUM_PARAMETERS);
                 break;
-            case 0x73:                // символ 's'
-                // Выходим из меню (эмуляция кнопки Cancel)
+            case 0x73:                // Г±ГЁГ¬ГўГ®Г« 's'
+                // Г‚Г»ГµГ®Г¤ГЁГ¬ ГЁГ§ Г¬ГҐГ­Гѕ (ГЅГ¬ГіГ«ГїГ¶ГЁГї ГЄГ­Г®ГЇГЄГЁ Cancel)
                 // parameters[12].val_data--; if (parameters[12].val_data < 0) parameters[12].val_data = 3;
-                // if (--main_menu[1].val_data < 0) main_menu[1].val_data = 3; // [12] Основной режим
-                // Текущий указатель устанавливаем на главное меню
+                // if (--main_menu[1].val_data < 0) main_menu[1].val_data = 3; // [12] ГЋГ±Г­Г®ГўГ­Г®Г© Г°ГҐГ¦ГЁГ¬
+                // Г’ГҐГЄГіГ№ГЁГ© ГіГЄГ Г§Г ГІГҐГ«Гј ГіГ±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ Г­Г  ГЈГ«Г ГўГ­Г®ГҐ Г¬ГҐГ­Гѕ
                 init_curr_menu(&main_menu[0], NUM_MENU);
                 break;
             */
-            case 0x78:                // символ 'x' Печатаем текущее меню
+            case 0x78:                // Г±ГЁГ¬ГўГ®Г« 'x' ГЏГҐГ·Г ГІГ ГҐГ¬ ГІГҐГЄГіГ№ГҐГҐ Г¬ГҐГ­Гѕ
                 print_curr_menu(); break;
-            /* case 0x65:                // символ 'e'
+            /* case 0x65:                // Г±ГЁГ¬ГўГ®Г« 'e'
                 lcd_initedit(0); clatsman.edit_mode = 1;
                 break;
-            case 0x64:                // символ 'd'
+            case 0x64:                // Г±ГЁГ¬ГўГ®Г« 'd'
                 lcd_initedit(1); clatsman.edit_mode = 0;
                 break;
-            case 0x63:                // символ 'c'
+            case 0x63:                // Г±ГЁГ¬ГўГ®Г« 'c'
                 lcd_initedit(-1); clatsman.edit_mode = 0;
                 break;*/
-            case 0x6D:                // символ 'm'
+            case 0x6D:                // Г±ГЁГ¬ГўГ®Г« 'm'
                 for(i=0; i<NUM_PARAMETERS; i++) printf("%s\t", param_str(i, parameters));
                 printf("\r\n");
                 break;
-            case 0x6E:                // символ 'n'
+            case 0x6E:                // Г±ГЁГ¬ГўГ®Г« 'n'
                 for(i=0; i<NUM_MENU; i++) printf("%s\t", param_str(i, main_menu));
                 printf("\r\n");
                 break;
             default:
-                printf("Нажат символ 0x%x\r\n", inbyte);
+                printf("ГЌГ Г¦Г ГІ Г±ГЁГ¬ГўГ®Г« 0x%x\r\n", inbyte);
         };
     }
 }
