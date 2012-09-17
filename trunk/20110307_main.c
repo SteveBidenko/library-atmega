@@ -62,7 +62,7 @@ void print_all_menu(void) {
     // Выведем на отладочную консоль все пункты меню
     printf ("Главное меню: ");
     for (i=0; i<MENU_LEVEL1; i++) printf ("%s ", mainscreen[i]);
-    printf ("\r\n");
+    printf ("\n");
 }
 // Функция вывода текущего и следующего пункта меню
 void lcd_menu(signed char direction) {
