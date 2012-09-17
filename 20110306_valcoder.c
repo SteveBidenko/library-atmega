@@ -2,6 +2,7 @@
 #include <delay.h>
 #include "robowater.h"
 #include "valcoder.h"
+#include "menu.h"
 
 byte valcoder0, valcoder1;      // Биты прерываний
 word counter0, counter1;        // счетчик кол-ва прерываний от valcoder

@@ -60,7 +60,6 @@ struct st_menupos {
     word alarmmenu:4;       // 5) Позиция меню аварий (МАХ 16)
 };
 */
-// Описание функций
 extern void init(void);
 extern int read_term(byte);
 // Описание глобальных переменных
